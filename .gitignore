@@ -1,0 +1,30 @@
+# Maven build output
+target/
+bin/
+
+# Local configuration (contains database credentials)
+src/main/resources/application.properties
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse / VS Code Java tooling
+.settings/
+.classpath
+.project
+.vscode/
+.factorypath
+
+# Compiled classes and logs
+*.class
+*.log
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# local file (salman)
+proposal/

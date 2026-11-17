@@ -1,0 +1,9 @@
+# Copy this file to application.properties and fill in your own values.
+# application.properties is git-ignored and must never be committed.
+#
+# The database layer is not wired up yet; these keys are placeholders for the
+# DBConnection helper that will be added once MySQL is installed.
+
+db.url=jdbc:mysql://localhost:3306/vehicle_service_center
+db.username=root
+db.password=change-me
