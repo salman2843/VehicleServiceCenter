@@ -34,6 +34,11 @@ public class SparePart implements Billable {
         return stockQty <= reorderLevel;
     }
 
+    /** True when this many units can be taken from stock without going negative. */
+    public boolean canFulfil(int quantity) {
+        return quantity > 0 && quantity <= stockQty;
+    }
+
     @Override
     public String getDescription() {
         return name;

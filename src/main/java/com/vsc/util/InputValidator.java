@@ -37,6 +37,17 @@ public final class InputValidator {
         return normalized.length() >= 4 && normalized.length() <= 16;
     }
 
+    /** Very small e-mail check: something@something.tld. Empty is rejected here. */
+    public static boolean isValidEmail(String email) {
+        if (isBlank(email)) {
+            return false;
+        }
+        String value = email.trim();
+        int at = value.indexOf('@');
+        int dot = value.lastIndexOf('.');
+        return at > 0 && dot > at + 1 && dot < value.length() - 1 && value.indexOf(' ') < 0;
+    }
+
     public static boolean isPositive(int value) {
         return value > 0;
     }

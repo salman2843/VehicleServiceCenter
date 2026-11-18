@@ -202,16 +202,16 @@ Rules applied in the service layer:
 | `services` | `ServiceItem` (implements `Billable`) |
 | `spare_parts` | `SparePart` (implements `Billable`) |
 | `job_cards` | `JobCard` + `JobStatus` |
-| `job_services`, `job_parts` | job line rows (no model class; read into invoice lines) |
+| `job_services`, `job_parts` | `JobServiceLine` / `JobPartLine` (read models used by the invoice) |
 | `invoices` | `Invoice` + `PaymentStatus` |
 | `payments` | `Payment` + `PaymentMethod` |
 
 ---
 
-## 6. Not done yet
+## 6. Status checklist
 
-- [ ] Run `schema.sql` on a real MySQL 8 installation and fix any errors.
+- [x] Run `schema.sql` on a real MySQL installation (MySQL 8.4.13, 2026-11-18, 10 tables created).
+- [x] Add `mysql-connector-j` to `pom.xml` and implement `util/DBConnection`.
+- [x] DAO layer (`com.vsc.dao`) and service layer (`com.vsc.service`).
 - [ ] Add `database/sample_data.sql` (a few customers, vehicles, parts, services).
-- [ ] Add `mysql-connector-j` to `pom.xml` and implement `util/DBConnection`.
-- [ ] Replace the "not designed yet" note in this document's status line once
-      the script has been executed successfully.
+- [ ] Wire the Swing screens to the service layer.

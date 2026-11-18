@@ -17,6 +17,10 @@ public class Payment {
         this(0, invoiceId, amount, method, null, LocalDateTime.now());
     }
 
+    public Payment(int invoiceId, BigDecimal amount, PaymentMethod method, String reference) {
+        this(0, invoiceId, amount, method, reference, LocalDateTime.now());
+    }
+
     public Payment(int id, int invoiceId, BigDecimal amount, PaymentMethod method,
                    String reference, LocalDateTime paidOn) {
         this.id = id;

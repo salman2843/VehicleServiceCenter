@@ -10,39 +10,47 @@ This is an MCA Java / OOP project. Code must stay readable and explainable, beca
 
 ## 1.1 Current state of the project (last updated: 2026-11-18)
 
-Version **0.2.0** — *Starter UI*. Read this table before planning any change; it
-says what already exists, so an agent does not rebuild or overwrite it.
+Version **0.3.0** — *Backend ready*. Read this table before planning any change;
+it says what already exists, so an agent does not rebuild or overwrite it.
 
 | Area | State | Where |
 | ---- | ----- | ----- |
 | Entry point | done | `com.vsc.Main` → creates `ui.MainFrame` on the EDT |
 | Main window | done | `ui/MainFrame` — header, left navigation, `CardLayout` screens, status bar, File/View/Help menus |
-| Screens | placeholder only | `ui/DashboardPanel` + `CustomerPanel`, `VehiclePanel`, `JobCardPanel`, `InventoryPanel`, `InvoicePanel`, `MechanicPanel` (all extend `ui.PlaceholderPanel`) |
+| Screens | placeholder only — **next step** | `ui/DashboardPanel` + `CustomerPanel`, `VehiclePanel`, `JobCardPanel`, `InventoryPanel`, `InvoicePanel`, `MechanicPanel` (all extend `ui.PlaceholderPanel`) |
 | Styling | done | `ui.UiTheme` (colours, label factories, `card()`), `util.AppInfo` (name/version/stage) |
-| Model | done | `Customer`, `Vehicle` (abstract) + `Car`/`Motorcycle`, `Mechanic`, `ServiceItem`, `SparePart`, `JobCard`, `Invoice`, `Payment`, `Billable`, enums `JobStatus`, `PaymentMethod`, `PaymentStatus` |
-| Shared helpers | done | `InputValidator`, `Money` (`BigDecimal`), `AppInfo` |
+| Model | done | `Customer`, `Vehicle` (abstract) + `Car`/`Motorcycle`, `Mechanic`, `ServiceItem`, `SparePart`, `JobCard`, `Invoice`, `Payment`, `JobServiceLine`, `JobPartLine`, `Billable`, enums `JobStatus` (has `next()`/`canMoveTo()`), `PaymentMethod`, `PaymentStatus` |
+| Shared helpers | done | `InputValidator`, `Money` (`BigDecimal`), `AppInfo`, `DBConnection` |
 | Exceptions | done | `ValidationException`, `InvalidStatusTransitionException`, `InsufficientStockException` |
-| Database | designed, **not executed** | `database/schema.sql` (10 tables), `docs/database_design.md`, ER brief in `docs/er_diagram.md` |
-| `dao` package | **empty** — next step | `src/main/java/com/vsc/dao` |
-| `service` package | **empty** — next step | `src/main/java/com/vsc/service` |
-| `util.DBConnection` | **does not exist yet** | add together with `mysql-connector-j` (dependency change needs team approval) |
-| Tests | 8 passing | `com.vsc.AppSmokeTest`, `com.vsc.ui.UiScreensTest` |
+| Database | **executed** on MySQL 8.4.13 | `database/schema.sql` (10 tables), `docs/database_design.md`, ER brief in `docs/er_diagram.md` |
+| `dao` package | done | 10 DAOs: `CustomerDao`, `VehicleDao`, `MechanicDao`, `ServiceItemDao`, `SparePartDao`, `JobCardDao`, `JobServiceDao`, `JobPartDao`, `InvoiceDao`, `PaymentDao` |
+| `service` package | done | `CustomerService`, `VehicleService`, `MechanicService`, `ServiceCatalogService`, `InventoryService`, `JobCardService`, `BillingService` |
+| `pom.xml` | `mysql-connector-j` 9.7.0 added (approved with the backend step) | no `exec-maven-plugin` yet |
+| Tests | **31 passing** | `AppSmokeTest`, `UiScreensTest`, `JobStatusTest`, `BillingCalculationTest`, `StockRuleTest`, `ServiceValidationTest`, `dao.WorkflowIntegrationTest` |
 
 Known environment facts on this machine:
 
-- JDK 21 is installed; **Maven is not on `PATH`** and **MySQL is not installed**.
-  VS Code's Java extension is used to run the app (`Run` above `main`).
-- `pom.xml` has JUnit 5, compiler and surefire only. No MySQL driver, no
-  `exec-maven-plugin` yet.
+- JDK 21 is installed; **Maven is still not on `PATH`** (a portable Maven is used
+  for verification) and VS Code's Java extension runs the app.
+- **MySQL 8.4.13 is installed and running** as Windows service `MySQL84`; the
+  database `vehicle_service_center` exists with all 10 tables. `mysql.exe` is not
+  on `PATH` (`C:\Program Files\MySQL\MySQL Server 8.4\bin`).
+- Credentials live only in `src/main/resources/application.properties`
+  (git-ignored). Never hard-code or commit them.
 
 Rules that follow from this state:
 
-1. The UI must keep working with **no database**: never add a startup call that
-   needs MySQL, or the app will not launch on a teammate's machine.
+1. The UI must keep working **without a database**: no startup connection in
+   `Main`; a screen opens its connection only when the user acts.
 2. Replace a placeholder screen by editing its own class; do not put two screens
    in one file and do not bypass `MainFrame.addScreen(...)` when adding one.
 3. Update this section, `README.md` "Current status", and `AppInfo.VERSION`
-   whenever a major piece lands (DAO, service, DB connection, a real screen).
+   whenever a major piece lands (a real screen, a new rule, a schema change).
+4. **Screens call services, never DAOs or `Connection`.** DAO methods take the
+   `Connection` from the service so multi-step rules stay in one transaction.
+5. `dao.WorkflowIntegrationTest` is the reference for the whole workflow; keep it
+   passing (it skips itself when MySQL is unavailable) and extend it when a new
+   rule is added.
 
 ## 2. Tech Stack
 
@@ -80,8 +88,8 @@ VehicleServiceCenter/
 ├── .gitignore
 ├── database/
 │   ├── README.md
-│   ├── schema.sql                            (written, not yet executed)
-│   └── sample_data.sql                       (to be added with the DB step)
+│   ├── schema.sql                            (executed on MySQL 8.4.13)
+│   └── sample_data.sql                       (to be added)
 ├── docs/
 │   ├── project_proposal.md
 │   ├── database_design.md
@@ -93,15 +101,15 @@ VehicleServiceCenter/
     │   ├── java/com/vsc/
     │   │   ├── Main.java
     │   │   ├── model/
-    │   │   ├── dao/
-    │   │   ├── service/
+    │   │   ├── dao/                          10 DAOs (SQL only, Connection passed in)
+    │   │   ├── service/                      7 services (validation + transactions)
     │   │   ├── ui/                           MainFrame, UiTheme, PlaceholderPanel + one panel per screen
-    │   │   ├── util/
+    │   │   ├── util/                         DBConnection, AppInfo, InputValidator, Money
     │   │   └── exception/
     │   └── resources/
     │       ├── application.properties.example
     │       └── application.properties        (local only, git-ignored)
-    └── test/java/com/vsc/                    AppSmokeTest, ui/UiScreensTest
+    └── test/java/com/vsc/                    model/service rule tests + dao.WorkflowIntegrationTest
 ```
 
 ### Package responsibilities
@@ -194,7 +202,7 @@ Rules:
     - `AGENTS.md` → section 1.1 state table.
     - `util.AppInfo.VERSION` / `BUILD_STAGE`.
     The README is what teammates and teachers read first, so it must never describe an older version than the code.
-12. Keep the application launchable without a database until the database step is explicitly started: no startup query, no driver requirement in `Main`.
+12. The application must stay launchable without a database: no startup query in `Main`. MySQL is reached only when a screen calls a service.
 
 ## 10. Build and Run
 
@@ -209,6 +217,10 @@ run here. Use VS Code's **Run** button on `src/main/java/com/vsc/Main.java`
 (the Java extension compiles to `bin/` or `target/` for you). Once Maven is
 installed, the three commands above work as written. `mvn exec:java` needs the
 `exec-maven-plugin`, which is not in `pom.xml` yet — ask before adding it.
+
+`mvn test` runs 31 tests. `dao.WorkflowIntegrationTest` needs MySQL;
+without a reachable server it is **skipped** (JUnit assumption), not failed, so
+the suite still passes on a teammate's machine.
 
 `target/` is Maven's generated build output (compiled `.class` files, test
 reports). It is git-ignored: never edit it, never commit it, and delete it

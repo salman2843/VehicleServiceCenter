@@ -2,28 +2,29 @@
 
 A Java Swing desktop application for a small vehicle workshop: customers,
 vehicles, job cards, mechanics, spare-part inventory, invoices and payments.
-Built with Java 21, Swing, Maven, JUnit 5 and (later) MySQL via JDBC.
+Built with Java 21, Swing, Maven, JUnit 5 and MySQL via JDBC.
 
 This is an MCA Java / OOP project; the code is kept readable so every team
 member can explain it.
 
 ## Current status
 
-**Version 0.2.0 — starter UI.**
+**Version 0.3.0 — backend ready (database + DAO + service layers).**
 
 | Area | State |
 | --- | --- |
 | Swing window + navigation | **Done** — header, 7 screens in a side menu, status bar, File/View/Help menus |
 | Feature screens | **Placeholder** — each lists what it will do and which service it will call |
-| Model classes | **Done** — all 11 entities + 3 enums |
-| Shared helpers | **Done** — `InputValidator`, `Money`, `AppInfo` |
-| Database | **Designed only** — `database/schema.sql` written, never executed (no MySQL yet) |
-| DAO layer | **Not started** |
-| Service layer | **Not started** |
-| Tests | 8 passing (`mvn test`) |
+| Model classes | **Done** — 12 entity classes + 3 enums |
+| Shared helpers | **Done** — `InputValidator`, `Money`, `AppInfo`, `DBConnection` |
+| Database | **Done and executed** — `database/schema.sql` created all 10 tables on MySQL 8.4.13 |
+| DAO layer | **Done** — 10 DAO classes, `PreparedStatement` only |
+| Service layer | **Done** — customers, vehicles, mechanics, catalogue, inventory, job cards, billing |
+| Tests | **31 passing** (`mvn test`), including an end-to-end run against MySQL |
+| Screens wired to the database | **Not yet** — this is the next step |
 
-The next steps are: install MySQL and run the schema, add the JDBC connection,
-then the DAO and service layers, then replace the placeholder screens.
+The next step is the UI: replace the placeholder screens one at a time, starting
+with Customers (search, register, open vehicles), then Job cards and Invoices.
 
 ## Requirements
 
@@ -31,7 +32,7 @@ then the DAO and service layers, then replace the placeholder screens.
 | ----- | ------- | ---------- |
 | JDK   | 21      | Everything |
 | Maven | 3.8+    | `mvn` commands (not installed yet — use the VS Code **Run** button meanwhile) |
-| MySQL | 8.0+    | Running `schema.sql` and saving data (not installed yet) |
+| MySQL | **8.4 LTS** (8.0+ works) | Saving data. Installed and running as service `MySQL84` on the development machine |
 
 ## Run it in VS Code
 
@@ -41,7 +42,7 @@ then the DAO and service layers, then replace the placeholder screens.
 4. Wait until the "Java: importing…" progress in the bottom-right disappears.
 5. Open `src/main/java/com/vsc/Main.java` and click **Run** above `main`, or
    press `F5` to debug.
-6. The *Vehicle Service Center 0.2.0* window opens on the Dashboard. Click the
+6. The *Vehicle Service Center 0.3.0* window opens on the Dashboard. Click the
    screens in the left menu (Customers, Vehicles, Job cards, Inventory,
    Invoices, Mechanics) to move around.
 
@@ -52,7 +53,7 @@ Workspace`, then reopen the file.
 
 ```
 +------------------------------------------------------+
-| Vehicle Service Center 0.2.0        File View Help   |
+| Vehicle Service Center 0.3.0        File View Help   |
 +--------------+---------------------------------------+
 | Dashboard    |                                       |
 | Customers    |   <selected screen>                   |
@@ -62,14 +63,14 @@ Workspace`, then reopen the file.
 | Invoices     |                                       |
 | Mechanics    |                                       |
 +--------------+---------------------------------------+
-| Application running - no database connected yet      |
+| Application running - backend ready, screens not ... |
 +------------------------------------------------------+
 ```
 
 Each screen under `src/main/java/com/vsc/ui/` is its own class, so a team
 member can own one screen without touching the others. They currently extend
-`PlaceholderPanel`; when the service layer exists, that content is replaced by
-the real table or form.
+`PlaceholderPanel`; when a screen is wired to the service layer, that content is
+replaced by the real table or form.
 
 ## Run it from a terminal
 
@@ -95,7 +96,7 @@ target/
 |      com/vsc/model/Customer.class   (one per .java file)
 |      application.properties.example (copied from resources)
 +-- test-classes/            src/test/java compiled (e.g. AppSmokeTest.class)
-+-- surefire-reports/        test results ("Tests run: 8, Failures: 0")
++-- surefire-reports/        test results ("Tests run: 31, Failures: 0")
 +-- maven-status/            Maven's bookkeeping of what was compiled
 +-- generated-sources/       empty for us; plugins would generate code here
 ```
@@ -116,15 +117,70 @@ Things every member should know:
 What to share with the team: only `src/`, `pom.xml`, `database/*.sql`, `docs/`
 and the Markdown files. Everything else is either local config or build output.
 
+## Backend: database, DAO and service layers
+
+### One-time setup on your machine
+
+1. Run the schema once (see [`database/README.md`](database/README.md)):
+   `mysql -u root -p < database/schema.sql`
+2. Copy `src/main/resources/application.properties.example` to
+   `application.properties` and put your own MySQL password in it. This file is
+   git-ignored, so nobody's password reaches GitHub.
+3. Run `mvn test`. The integration test drives the whole workflow against your
+   database and deletes its own rows afterwards. **If MySQL is not running it is
+   skipped, not failed**, so the app and the test suite still work without a
+   database.
+
+### Who does what
+
+| Layer | Classes | Responsibility |
+| --- | --- | --- |
+| `dao` | `CustomerDao`, `VehicleDao`, `MechanicDao`, `ServiceItemDao`, `SparePartDao`, `JobCardDao`, `JobServiceDao`, `JobPartDao`, `InvoiceDao`, `PaymentDao` | SQL only: `PreparedStatement`, `ResultSet` to object mapping |
+| `service` | `CustomerService`, `VehicleService`, `MechanicService`, `ServiceCatalogService`, `InventoryService`, `JobCardService`, `BillingService` | Validation, transactions and business rules |
+| `util` | `DBConnection` | Reads `application.properties`, opens a `Connection`, hides the password in error messages |
+| `ui` | the panels | Next step: call a service and show the result / an error dialog |
+
+DAOs never create connections; the service passes one in, which is what makes a
+transaction possible.
+
+### Rules that are actually enforced by code
+
+- **Status** moves one step only: `RECEIVED → IN_PROGRESS → COMPLETED → DELIVERED`
+  (`JobStatus.canMoveTo`, `JobCardService.updateStatus`).
+- **Stock** can never go negative: checked in `InventoryService.ensureAvailable`,
+  and the `UPDATE ... WHERE stock_qty >= ?` in `SparePartDao.deductStock` checks
+  it again so two users cannot take the same last unit.
+- **Adding a part** writes the stock deduction and the job line in one
+  transaction (`JobCardService.addPart`): both succeed or neither does.
+- **Invoice** = labour + parts − discount (+ tax), from the prices saved on the
+  job lines (`BillingService.calculate`, unit tested).
+- **Payment status** is derived, never typed in: `UNPAID`, `PARTIALLY_PAID`,
+  `PAID` (`BillingService.deriveStatus`).
+- An invoice needs a `COMPLETED` job, one invoice per job, and a `DELIVERED` job
+  cannot be edited any more.
+
+### How a screen will call it
+
+```java
+Customer saved = new CustomerService().register(new Customer(name, phone));
+JobCard job    = new JobCardService().openJob(vehicleId, complaint);
+Invoice bill   = new BillingService().generateInvoice(job.getId(), discount);
+```
+
+The panel wraps those calls in `try/catch` for `ValidationException`,
+`InsufficientStockException`, `InvalidStatusTransitionException` and
+`SQLException`, and shows a friendly `JOptionPane`. No SQL in the UI.
+
 ## Database design
 
-The database is designed but **not created yet** — no MySQL installation is
-needed to read this part.
+The database is created and running on the development machine (MySQL 8.4.13).
+`database/schema.sql` is the source of truth; anyone can recreate it from that
+file.
 
 | Document | What it contains |
 | --- | --- |
 | [`docs/database_design.md`](docs/database_design.md) | **Start here.** All 10 tables, columns, keys, foreign keys, cardinality, business rules and the mapping to the Java model |
-| [`database/schema.sql`](database/schema.sql) | The executable MySQL 8 DDL that implements that design |
+| [`database/schema.sql`](database/schema.sql) | The executable MySQL 8 DDL that implements that design (already run) |
 | [`docs/er_diagram.md`](docs/er_diagram.md) | ER-diagram hand-off sheet: what to draw, the 9 relationships, tools, and a checklist for the team member who draws it |
 
 Quick summary of the model:
@@ -137,7 +193,7 @@ customers ──< vehicles ──< job_cards ──< job_services >── servic
                               └──  mechanics (assigned mechanic)
 ```
 
-When MySQL is installed, create the database with:
+Create the database on a new machine with:
 
 ```bash
 mysql -u root -p < database/schema.sql
@@ -146,17 +202,19 @@ mysql -u root -p < database/schema.sql
 ## Project layout
 
 ```
-database/                 schema.sql (designed, not yet run) + sample_data.sql (later)
+database/                 schema.sql (executed) + sample_data.sql (later)
 docs/                     database_design.md, er_diagram.md, project_proposal.md, screenshots/
 src/main/java/com/vsc/
     Main.java             entry point (launches the Swing window)
-    model/                entities: Customer, Vehicle/Car/Motorcycle, JobCard, ...
-    dao/                  JDBC code (empty for now)
-    service/              business rules and transactions (empty for now)
+    model/                entities: Customer, Vehicle/Car/Motorcycle, JobCard, JobServiceLine, ...
+    dao/                  10 DAO classes: SQL and row mapping only
+    service/              7 service classes: validation, transactions, business rules
     ui/                   MainFrame, one panel per screen, UiTheme, PlaceholderPanel
-    util/                 AppInfo, InputValidator, Money, DBConnection (later)
+    util/                 DBConnection, AppInfo, InputValidator, Money
     exception/            custom checked exceptions
-src/test/java/com/vsc/    JUnit 5 tests (model + screens)
+src/main/resources/
+    application.properties.example    template to copy (the real one is git-ignored)
+src/test/java/com/vsc/    JUnit 5: model rules, billing, stock, validation, DB integration
 target/                   build output, generated, git-ignored (see section above)
 ```
 
@@ -167,12 +225,14 @@ business rules never live in a button listener.
 
 - Work on a feature branch: `feature/<short-name>` or `fix/<short-name>`.
 - Money is always `BigDecimal`, never `double`.
-- Run `mvn test` before opening a pull request.
+- Run `mvn test` before opening a pull request (31 tests; the MySQL one skips
+  itself when no database is running).
 - Never commit `application.properties` (copy
   `src/main/resources/application.properties.example`).
 - **Update this README after every major change**: tick the `Current status`
   table, add the new screen to the layout, and bump `AppInfo.VERSION`. A member
   who opens the repository should always see what works today without asking.
 - One screen = one class in `com.vsc.ui`. Do not put two screens in one file.
+- Add a JUnit test with every new rule (calculation, stock, status, validation).
 - AI agents must read `AGENTS.md` first; it describes the current state of the
   code and the rules to follow.

@@ -17,6 +17,13 @@ public class InvalidStatusTransitionException extends Exception {
         this.requested = requested;
     }
 
+    /** Used when the job is already at the final status, so there is no next step. */
+    public InvalidStatusTransitionException(JobStatus current) {
+        super("Job is already " + current + " and cannot move further");
+        this.current = current;
+        this.requested = null;
+    }
+
     public JobStatus getCurrent() {
         return current;
     }

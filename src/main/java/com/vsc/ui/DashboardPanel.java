@@ -55,16 +55,18 @@ public class DashboardPanel extends JPanel {
         cards.add(buildListCard("Working today", new String[]{
                 "Application window and navigation",
                 "Model classes for every entity (Customer, Vehicle, JobCard, ...)",
-                "Shared helpers: InputValidator, Money, AppInfo",
-                "Database schema designed in database/schema.sql",
-                "JUnit 5 tests: mvn test"
+                "Database schema executed on MySQL 8.4 (10 tables)",
+                "DAO layer: JDBC + PreparedStatement per table",
+                "Service layer: validation, status rules, stock and billing",
+                "End-to-end integration test against MySQL",
+                "31 JUnit 5 tests: mvn test"
         }));
         cards.add(buildListCard("Next steps", new String[]{
-                "Install MySQL, run database/schema.sql",
-                "Add mysql-connector-j and util/DBConnection",
-                "DAO layer: one class per table",
-                "Service layer: status rules, stock, invoice totals",
-                "Replace each placeholder screen with a real form"
+                "Replace each placeholder screen with a real form and table",
+                "Customers screen: search, register, open vehicles",
+                "Job card screen: add services/parts, move status forward",
+                "Invoice screen: generate bill, record payments",
+                "Sample data and screenshots for the report"
         }));
         return cards;
     }

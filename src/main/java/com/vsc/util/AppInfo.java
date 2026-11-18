@@ -11,8 +11,8 @@ package com.vsc.util;
 public final class AppInfo {
 
     public static final String NAME = "Vehicle Service Center";
-    public static final String VERSION = "0.2.0";
-    public static final String BUILD_STAGE = "Starter UI - database layer not connected yet";
+    public static final String VERSION = "0.3.0";
+    public static final String BUILD_STAGE = "Backend ready - DAO and service layers, screens not wired yet";
 
     private AppInfo() {
         // utility class, no instances

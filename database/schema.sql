@@ -2,11 +2,12 @@
 -- Vehicle Service Center Management System - database schema
 -- Target: MySQL 8.0+ (InnoDB, utf8mb4)
 --
--- Status: written without a local MySQL installation, so it has NOT been
--- executed yet. Run it once MySQL is installed:
+-- Status: executed successfully on MySQL 8.4.13 (2026-11-18). All 10 tables
+-- were created. Re-running the file stops at the first existing table, which
+-- protects the data; drop the database only when you want a fresh start:
 --     mysql -u root -p < database/schema.sql
--- Any error found on the first run should be fixed here and mirrored in
--- docs/database_design.md in the same commit (see AGENTS.md, Database Rules).
+-- Any change here must be mirrored in docs/database_design.md in the same
+-- commit (see AGENTS.md, Database Rules).
 -- =====================================================================
 
 CREATE DATABASE IF NOT EXISTS vehicle_service_center

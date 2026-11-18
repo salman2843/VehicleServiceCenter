@@ -142,7 +142,7 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel buildStatusBar() {
-        JLabel running = UiTheme.status("Application running - no database connected yet");
+        JLabel running = UiTheme.status("Application running - backend ready, screens not wired yet");
         currentScreenLabel.setForeground(UiTheme.MUTED);
         currentScreenLabel.setFont(currentScreenLabel.getFont().deriveFont(11f));
 
