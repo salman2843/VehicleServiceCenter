@@ -213,5 +213,5 @@ Rules applied in the service layer:
 - [x] Run `schema.sql` on a real MySQL installation (MySQL 8.4.13, 2026-11-18, 10 tables created).
 - [x] Add `mysql-connector-j` to `pom.xml` and implement `util/DBConnection`.
 - [x] DAO layer (`com.vsc.dao`) and service layer (`com.vsc.service`).
-- [ ] Add `database/sample_data.sql` (a few customers, vehicles, parts, services).
+- [x] Add `database/sample_data.sql` (a few customers, vehicles, parts, services).
 - [ ] Wire the Swing screens to the service layer.

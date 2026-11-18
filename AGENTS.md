@@ -22,7 +22,7 @@ it says what already exists, so an agent does not rebuild or overwrite it.
 | Model | done | `Customer`, `Vehicle` (abstract) + `Car`/`Motorcycle`, `Mechanic`, `ServiceItem`, `SparePart`, `JobCard`, `Invoice`, `Payment`, `JobServiceLine`, `JobPartLine`, `Billable`, enums `JobStatus` (has `next()`/`canMoveTo()`), `PaymentMethod`, `PaymentStatus` |
 | Shared helpers | done | `InputValidator`, `Money` (`BigDecimal`), `AppInfo`, `DBConnection` |
 | Exceptions | done | `ValidationException`, `InvalidStatusTransitionException`, `InsufficientStockException` |
-| Database | **executed** on MySQL 8.4.13 | `database/schema.sql` (10 tables), `docs/database_design.md`, ER brief in `docs/er_diagram.md` |
+| Database | **executed** on MySQL 8.4.13, with demo rows | `database/schema.sql` (10 tables), `database/sample_data.sql` (5 customers, 4 job cards, 2 invoices), `docs/database_design.md`, ER brief in `docs/er_diagram.md` |
 | `dao` package | done | 10 DAOs: `CustomerDao`, `VehicleDao`, `MechanicDao`, `ServiceItemDao`, `SparePartDao`, `JobCardDao`, `JobServiceDao`, `JobPartDao`, `InvoiceDao`, `PaymentDao` |
 | `service` package | done | `CustomerService`, `VehicleService`, `MechanicService`, `ServiceCatalogService`, `InventoryService`, `JobCardService`, `BillingService` |
 | `pom.xml` | `mysql-connector-j` 9.7.0 added (approved with the backend step) | no `exec-maven-plugin` yet |

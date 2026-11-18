@@ -5,7 +5,7 @@ The MySQL scripts live here.
 | File | Status | Purpose |
 | --- | --- | --- |
 | `schema.sql` | **executed successfully** on MySQL 8.4.13 | Creates the `vehicle_service_center` database and its 10 tables |
-| `sample_data.sql` | not created yet | Demo customers, vehicles, parts and services |
+| `sample_data.sql` | **executed successfully** | 5 customers, 5 vehicles, 4 job cards in every status, 2 invoices and payments |
 
 ## Run the schema
 
@@ -40,6 +40,26 @@ cp src/main/resources/application.properties.example src/main/resources/applicat
 ```
 
 then set your own `db.password`. Nothing is hard-coded in Java.
+
+## Load the sample data (optional but recommended)
+
+`sample_data.sql` fills the tables with a small demo workshop: 5 customers,
+5 vehicles, 3 mechanics, 5 services, 5 spare parts, 4 job cards (one in each
+status), 2 invoices and 2 payments. It is what the screenshots and the report
+should show.
+
+```bash
+mysql -u root -p < database/sample_data.sql
+```
+
+The file writes explicit ids, so running it twice stops at the first duplicate
+key and changes nothing. To start again from empty:
+
+```sql
+DROP DATABASE vehicle_service_center;
+```
+
+then run `schema.sql` and `sample_data.sql` again in that order.
 
 Design details (tables, keys, rules) are in
 [`../docs/database_design.md`](../docs/database_design.md); the ER-diagram

@@ -123,6 +123,7 @@ and the Markdown files. Everything else is either local config or build output.
 
 1. Run the schema once (see [`database/README.md`](database/README.md)):
    `mysql -u root -p < database/schema.sql`
+   Optionally load the demo rows: `mysql -u root -p < database/sample_data.sql`
 2. Copy `src/main/resources/application.properties.example` to
    `application.properties` and put your own MySQL password in it. This file is
    git-ignored, so nobody's password reaches GitHub.
@@ -202,7 +203,7 @@ mysql -u root -p < database/schema.sql
 ## Project layout
 
 ```
-database/                 schema.sql (executed) + sample_data.sql (later)
+database/                 schema.sql (executed) + sample_data.sql (demo rows loaded)
 docs/                     database_design.md, er_diagram.md, project_proposal.md, screenshots/
 src/main/java/com/vsc/
     Main.java             entry point (launches the Swing window)
