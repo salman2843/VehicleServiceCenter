@@ -5,8 +5,8 @@ import java.math.BigDecimal;
 /**
  * Anything that can appear as a chargeable line on an invoice, such as a
  * service charge or a spare part. Invoice totals are built from these two
- * methods, so the calculation lives on the object instead of in a Swing
- * button handler.
+ * methods, so the calculation lives on the object instead of in an HTTP
+ * handler or a React component.
  */
 public interface Billable {
 

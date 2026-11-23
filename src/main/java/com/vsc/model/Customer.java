@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 /**
  * A workshop customer - the person who owns one or more vehicles.
- * Pure data holder: no SQL and no Swing code belongs here.
+ * Pure data holder: no SQL and no UI code belongs here.
  */
 public class Customer {
 
