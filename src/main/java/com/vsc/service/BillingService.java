@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Billing rules: build an invoice from the saved job lines and record payments.
@@ -196,6 +197,13 @@ public class BillingService {
                 throw new ValidationException("invoice", "Invoice not found.");
             }
             return Money.subtract(invoice.getTotal(), scaled(paymentDao.totalPaid(con, invoiceId)));
+        }
+    }
+
+    /** Paid amount per invoice, used by the invoice list and the dashboard. */
+    public Map<Integer, BigDecimal> paidTotals() throws SQLException {
+        try (Connection con = DBConnection.getConnection()) {
+            return paymentDao.totalPaidByInvoice(con);
         }
     }
 

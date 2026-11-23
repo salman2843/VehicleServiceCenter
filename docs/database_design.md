@@ -214,4 +214,4 @@ Rules applied in the service layer:
 - [x] Add `mysql-connector-j` to `pom.xml` and implement `util/DBConnection`.
 - [x] DAO layer (`com.vsc.dao`) and service layer (`com.vsc.service`).
 - [x] Add `database/sample_data.sql` (a few customers, vehicles, parts, services).
-- [ ] Wire the Swing screens to the service layer.
+- [x] Expose the service layer through `com.vsc.api` and build the React UI on top of it.

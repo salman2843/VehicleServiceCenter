@@ -22,6 +22,13 @@ src/main/resources/application.properties
 *.class
 *.log
 
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Local AI tooling (Impeccable skill install, caches)
+.opencode/
+
 # OS noise
 .DS_Store
 Thumbs.db
