@@ -11,7 +11,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * All SQL for the {@code payments} table. Several rows per invoice are allowed,
@@ -66,6 +68,23 @@ public class PaymentDao {
                 rs.next();
                 return rs.getBigDecimal(1);
             }
+        }
+    }
+
+    /**
+     * Paid amount per invoice, for list screens that show many invoices.
+     * One grouped query instead of one query per row.
+     */
+    public Map<Integer, BigDecimal> totalPaidByInvoice(Connection con) throws SQLException {
+        String sql = "SELECT invoice_id, COALESCE(SUM(amount), 0) AS paid "
+                + "FROM payments GROUP BY invoice_id";
+        try (PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            Map<Integer, BigDecimal> totals = new HashMap<>();
+            while (rs.next()) {
+                totals.put(rs.getInt("invoice_id"), rs.getBigDecimal("paid"));
+            }
+            return totals;
         }
     }
 }

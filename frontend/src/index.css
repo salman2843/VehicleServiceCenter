@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+
+  --color-paper: #f7f5ef;
+  --color-surface: #ffffff;
+  --color-muted: #f1eee5;
+  --color-ink: #1c211d;
+  --color-ink-soft: #5a625b;
+  --color-line: #e2ded2;
+  --color-brand: #1f5138;
+  --color-brand-dark: #163d2a;
+  --color-brand-soft: #e7f0e9;
+  --color-amber: #b45309;
+  --color-amber-soft: #fbf1e2;
+  --color-danger: #a63a2b;
+  --color-danger-soft: #fbeeeb;
+  --color-slate: #475569;
+  --color-slate-soft: #eef1f5;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink;
+  }
+
+  ::selection {
+    @apply bg-brand/20;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cfc9bb transparent;
+  }
+}
+
+@layer utilities {
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .animate-fade {
+    animation: vsc-fade 160ms ease-out both;
+  }
+
+  .animate-slide {
+    animation: vsc-slide 190ms ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade,
+    .animate-slide {
+      animation: none;
+    }
+  }
+}
+
+@keyframes vsc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vsc-slide {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

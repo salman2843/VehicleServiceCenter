@@ -4,67 +4,76 @@ This file tells AI coding agents (Codex, etc.) and developers how this project i
 
 ## 1. Project Summary
 
-A Java Swing desktop application that helps a small vehicle workshop manage customers, vehicles, service visits (job cards), mechanics, spare-part inventory, invoices, and payments in one connected workflow.
+A vehicle workshop management application: customers, vehicles, service visits
+(job cards), mechanics, spare-part inventory, invoices, and payments in one
+connected workflow. The UI is a React + TypeScript + Tailwind web app; the Java
+backend exposes a JSON HTTP API over the existing service/DAO layers and MySQL.
 
 This is an MCA Java / OOP project. Code must stay readable and explainable, because everyone working on it has to be able to understand and present it.
 
-## 1.1 Current state of the project (last updated: 2026-11-18)
+## 1.1 Current state of the project (last updated: 2026-11-22)
 
-Version **0.3.0** — *Backend ready*. Read this table before planning any change;
-it says what already exists, so an agent does not rebuild or overwrite it.
+Version **1.0.0** — *Complete application*. Read this table before planning any
+change; it says what already exists, so an agent does not rebuild or overwrite it.
 
 | Area | State | Where |
 | ---- | ----- | ----- |
-| Entry point | done | `com.vsc.Main` → creates `ui.MainFrame` on the EDT |
-| Main window | done | `ui/MainFrame` — header, left navigation, `CardLayout` screens, status bar, File/View/Help menus |
-| Screens | placeholder only — **next step** | `ui/DashboardPanel` + `CustomerPanel`, `VehiclePanel`, `JobCardPanel`, `InventoryPanel`, `InvoicePanel`, `MechanicPanel` (all extend `ui.PlaceholderPanel`) |
-| Styling | done | `ui.UiTheme` (colours, label factories, `card()`), `util.AppInfo` (name/version/stage) |
+| Entry point | done | `com.vsc.Main` → starts `api.ApiServer` on port 8080 and opens the browser |
+| HTTP API | done | `com.vsc.api`: `ApiServer`, `Router`, `ApiRequest`/`ApiResponse`, `Json`, `StaticFiles`, one handler per resource (`CustomerApi`, `VehicleApi`, `MechanicApi`, `CatalogApi`, `InventoryApi`, `JobApi`, `InvoiceApi`, `DashboardApi`) |
+| Frontend | done | `frontend/` — React 19, TypeScript, Vite, Tailwind 4, `react-router-dom` |
+| Screens | done | `frontend/src/pages/`: `DashboardPage`, `CustomersPage`, `VehiclesPage`, `JobsPage`, `JobDetailPage`, `InvoicesPage`, `InvoiceDetailPage`, `InventoryPage`, `MechanicsPage` |
+| Design system | done | `frontend/src/index.css` tokens, `components/ui.tsx`, `components/Icons.tsx`; context in `PRODUCT.md` and `DESIGN.md` |
+| API client | done | `frontend/src/api.ts`, types in `src/types.ts`, `useApi` in `src/hooks.ts` |
 | Model | done | `Customer`, `Vehicle` (abstract) + `Car`/`Motorcycle`, `Mechanic`, `ServiceItem`, `SparePart`, `JobCard`, `Invoice`, `Payment`, `JobServiceLine`, `JobPartLine`, `Billable`, enums `JobStatus` (has `next()`/`canMoveTo()`), `PaymentMethod`, `PaymentStatus` |
 | Shared helpers | done | `InputValidator`, `Money` (`BigDecimal`), `AppInfo`, `DBConnection` |
 | Exceptions | done | `ValidationException`, `InvalidStatusTransitionException`, `InsufficientStockException` |
 | Database | **executed** on MySQL 8.4.13, with demo rows | `database/schema.sql` (10 tables), `database/sample_data.sql` (5 customers, 4 job cards, 2 invoices), `docs/database_design.md`, ER brief in `docs/er_diagram.md` |
 | `dao` package | done | 10 DAOs: `CustomerDao`, `VehicleDao`, `MechanicDao`, `ServiceItemDao`, `SparePartDao`, `JobCardDao`, `JobServiceDao`, `JobPartDao`, `InvoiceDao`, `PaymentDao` |
 | `service` package | done | `CustomerService`, `VehicleService`, `MechanicService`, `ServiceCatalogService`, `InventoryService`, `JobCardService`, `BillingService` |
-| `pom.xml` | `mysql-connector-j` 9.7.0 added (approved with the backend step) | no `exec-maven-plugin` yet |
-| Tests | **31 passing** | `AppSmokeTest`, `UiScreensTest`, `JobStatusTest`, `BillingCalculationTest`, `StockRuleTest`, `ServiceValidationTest`, `dao.WorkflowIntegrationTest` |
+| `pom.xml` | `mysql-connector-j` 9.7.0 and `exec-maven-plugin` 3.5.0 | `mvn exec:java` starts the API |
+| Tests | **30 passing** | `AppSmokeTest`, `JobStatusTest`, `BillingCalculationTest`, `StockRuleTest`, `ServiceValidationTest`, `dao.WorkflowIntegrationTest` |
 
 Known environment facts on this machine:
 
 - JDK 21 is installed; **Maven is still not on `PATH`** (a portable Maven is used
-  for verification) and VS Code's Java extension runs the app.
+  for verification).
 - **MySQL 8.4.13 is installed and running** as Windows service `MySQL84`; the
   database `vehicle_service_center` exists with all 10 tables. `mysql.exe` is not
   on `PATH` (`C:\Program Files\MySQL\MySQL Server 8.4\bin`).
+- Node 20+ / npm are installed; the frontend uses `npm.cmd` on Windows.
 - Credentials live only in `src/main/resources/application.properties`
   (git-ignored). Never hard-code or commit them.
 
 Rules that follow from this state:
 
-1. The UI must keep working **without a database**: no startup connection in
-   `Main`; a screen opens its connection only when the user acts.
-2. Replace a placeholder screen by editing its own class; do not put two screens
-   in one file and do not bypass `MainFrame.addScreen(...)` when adding one.
+1. The application must stay launchable **without a database**: `Main` opens no
+   connection; a request reaches MySQL only when the UI calls an endpoint.
+2. Add a screen as its own file in `frontend/src/pages/` and register its route in
+   `frontend/src/App.tsx`; do not put two screens in one file.
 3. Update this section, `README.md` "Current status", and `AppInfo.VERSION`
-   whenever a major piece lands (a real screen, a new rule, a schema change).
-4. **Screens call services, never DAOs or `Connection`.** DAO methods take the
-   `Connection` from the service so multi-step rules stay in one transaction.
+   whenever a major piece lands (a new screen, a new rule, a schema change).
+4. **The UI calls the HTTP API, never MySQL; the API calls services, never DAOs
+   directly.** DAO methods take the `Connection` from the service so multi-step
+   rules stay in one transaction.
 5. `dao.WorkflowIntegrationTest` is the reference for the whole workflow; keep it
    passing (it skips itself when MySQL is unavailable) and extend it when a new
    rule is added.
 
 ## 2. Tech Stack
 
-| Area            | Choice                                             |
-| --------------- | -------------------------------------------------- |
-| Language        | Java 21 (JDK 21)                                   |
-| UI              | Java Swing (AWT/Swing, layout managers, listeners) |
-| Database        | MySQL accessed through JDBC                        |
-| Build           | Maven                                              |
-| Tests           | JUnit 5                                            |
-| Version control | Git                                                |
-| IDE             | IntelliJ IDEA                                      |
+| Area            | Choice                                                          |
+| --------------- | --------------------------------------------------------------- |
+| Backend language| Java 21 (JDK 21)                                                |
+| Frontend        | React 19, TypeScript, Vite, Tailwind CSS 4, React Router        |
+| HTTP layer      | JDK built-in `com.sun.net.httpserver` (no framework)            |
+| Database        | MySQL accessed through JDBC                                     |
+| Build           | Maven (backend) + npm/Vite (frontend)                           |
+| Tests           | JUnit 5                                                         |
+| Version control | Git                                                             |
+| IDE             | IntelliJ IDEA / VS Code                                         |
 
-Do not introduce other frameworks (Spring, Hibernate/JPA, JavaFX, Lombok, web frontends) unless the team explicitly agrees.
+Do not introduce other backend frameworks (Spring, Hibernate/JPA, JavaFX, Lombok)
+or another UI framework unless the team explicitly agrees.
 
 ## 3. Core Workflow the App Supports
 
@@ -85,11 +94,24 @@ VehicleServiceCenter/
 ├── pom.xml
 ├── README.md
 ├── AGENTS.md
+├── PRODUCT.md                                (product context for design work)
+├── DESIGN.md                                 (clean-workshop design system)
 ├── .gitignore
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.ts                        (Tailwind plugin, /api proxy)
+│   └── src/
+│       ├── main.tsx                          (BrowserRouter + ToastProvider + App)
+│       ├── App.tsx                           (all routes)
+│       ├── index.css                         (Tailwind theme tokens)
+│       ├── api.ts / types.ts / hooks.ts      (typed client, JSON shapes, loaders)
+│       ├── format.ts                         (money, dates, status labels)
+│       ├── components/                       (Layout, ui primitives, modals, toasts, icons)
+│       └── pages/                            (one file per screen, 9 screens)
 ├── database/
 │   ├── README.md
 │   ├── schema.sql                            (executed on MySQL 8.4.13)
-│   └── sample_data.sql                       (to be added)
+│   └── sample_data.sql                       (demo rows)
 ├── docs/
 │   ├── project_proposal.md
 │   ├── database_design.md
@@ -100,10 +122,10 @@ VehicleServiceCenter/
     ├── main/
     │   ├── java/com/vsc/
     │   │   ├── Main.java
+    │   │   ├── api/                          HTTP server, router, JSON, one handler per resource
     │   │   ├── model/
     │   │   ├── dao/                          10 DAOs (SQL only, Connection passed in)
     │   │   ├── service/                      7 services (validation + transactions)
-    │   │   ├── ui/                           MainFrame, UiTheme, PlaceholderPanel + one panel per screen
     │   │   ├── util/                         DBConnection, AppInfo, InputValidator, Money
     │   │   └── exception/
     │   └── resources/
@@ -116,24 +138,28 @@ VehicleServiceCenter/
 
 | Package     | Responsibility                                                                                                                                                               | Must NOT contain            |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| `model`     | Entities: `Customer`, `Vehicle` (abstract), `Car`, `Motorcycle`, `Mechanic`, `ServiceItem`, `SparePart`, `JobCard`, `Invoice`, `Payment`, plus interfaces such as `Billable` | SQL, Swing code             |
-| `dao`       | All SQL and JDBC: CRUD, ResultSet-to-object mapping. Use `PreparedStatement` only                                                                                            | Business rules, Swing code  |
-| `service`   | Business rules: status transitions, stock validation, invoice calculation, payment handling, transactions                                                                    | Swing code, raw SQL strings |
-| `ui`        | Swing frames, panels, dialogs, tables, event listeners, navigation                                                                                                           | SQL, business calculations  |
+| `model`     | Entities: `Customer`, `Vehicle` (abstract), `Car`, `Motorcycle`, `Mechanic`, `ServiceItem`, `SparePart`, `JobCard`, `Invoice`, `Payment`, plus interfaces such as `Billable` | SQL, HTTP code              |
+| `dao`       | All SQL and JDBC: CRUD, ResultSet-to-object mapping. Use `PreparedStatement` only                                                                                            | Business rules, HTTP code   |
+| `service`   | Business rules: status transitions, stock validation, invoice calculation, payment handling, transactions                                                                    | HTTP code, raw SQL strings  |
+| `api`       | HTTP routing, JSON request/response shapes, status codes, CORS, static files                                                                                                  | Business rules, SQL         |
 | `util`      | Shared helpers: `DBConnection`, `InputValidator`, formatting helpers                                                                                                         | Feature-specific logic      |
 | `exception` | Custom exceptions such as `InsufficientStockException`, `InvalidStatusTransitionException`, `ValidationException`                                                            | —                           |
+| `frontend/src/pages` | One screen per file: fetch via `api.ts`, render with the shared primitives                                                                                            | SQL, business calculations  |
+| `frontend/src/components` | Layout, buttons, fields, tables, modals, toasts, icons                                                                                                                | Page-specific fetching      |
 
 ### Layer flow (strict)
 
 ```
-Swing panel (ui)  →  service class  →  DAO class  →  MySQL
+React page (frontend/src/pages)  →  api.ts  →  HTTP JSON  →  api handler  →  service class  →  DAO class  →  MySQL
 ```
 
-- UI calls services only, never DAOs or SQL directly.
+- The UI calls the HTTP API only, never MySQL or a DAO.
+- API handlers translate JSON to service calls; they hold no business rules.
 - Services call DAOs and apply business rules.
 - DAOs talk to the database only.
 - Models are plain data/behavior objects shared by all layers.
-- Never put SQL or invoice/stock calculations inside a button's event handler.
+- Never put SQL or invoice/stock calculations inside a button's event handler or
+  a React component.
 
 ## 5. Database Rules
 
@@ -167,23 +193,27 @@ Rules:
 - Payment methods: `CASH`, `UPI`, `CARD`.
 - A job should be `COMPLETED` before an invoice is generated, and `DELIVERED` only after the vehicle is handed over.
 
-## 7. Java / OOP Conventions (syllabus-relevant, keep them natural)
+## 7. Java / OOP and Frontend Conventions (syllabus-relevant, keep them natural)
 
 - `Vehicle` is an abstract base class; `Car` and `Motorcycle` extend it and override `getVehicleType()`.
 - `Billable` interface defines how an item contributes a charge; chargeable items implement it.
 - Use constructor overloading where it makes sense (required vs. optional fields).
 - Use custom exceptions with `try/catch/finally` where appropriate.
-- Use `SwingWorker` (or a background thread) only where it truly keeps the UI responsive, e.g. loading reports. Do not add threads just to claim coverage.
-- Use Swing layout managers (`BorderLayout`, `GridBagLayout`, etc.), `JTable` with table models, and `ActionListener`s for events.
+- The HTTP API is plain Java: `Router` dispatch, `PreparedStatement` inside DAOs, `try-with-resources` for JDBC.
+- The React app is function components with hooks (`useState`, `useEffect`, `useApi`); no class components and no state library.
+- Keep TypeScript strict: `import type` for types, no `enum` (use union types), no unused symbols. The build runs `tsc -b`.
+- Reuse the primitives in `frontend/src/components/ui.tsx` (Button, Card, Field, Select, Badge, EmptyState, …) instead of new one-off markup.
 
 ## 8. Code Style
 
 - Package root: `com.vsc`. Classes `PascalCase`, methods/variables `camelCase`, constants `UPPER_SNAKE_CASE`, DB tables/columns `snake_case`.
 - One public class per file. Keep methods short and single-purpose.
 - Add brief Javadoc on public classes and non-obvious methods; comment the "why", not the obvious.
-- Validate user input in `InputValidator` / service layer, and show friendly dialogs for errors. Never show raw stack traces to the user.
+- Validate user input in `InputValidator` / service layer, and return a friendly API error (`{"error": "...", "field": "..."}`). Never expose a stack trace to the browser.
 - Close JDBC resources with try-with-resources.
 - No unused code, no commented-out blocks, no dead imports.
+- Frontend: one screen per file in `src/pages`, shared pieces in `src/components`, display helpers in `src/format.ts`. Money is formatted with `Intl.NumberFormat`; never do money arithmetic with floats in the UI.
+- Tailwind classes follow the existing clean-workshop tokens (`bg-paper`, `bg-surface`, `text-ink`, `border-line`, `bg-brand`); do not hard-code new hex colours.
 
 ## 9. Working Rules for AI Agents
 
@@ -194,31 +224,37 @@ Rules:
 5. Do not add new dependencies without asking.
 6. Update `schema.sql` and `docs/database_design.md` whenever tables change.
 7. Add or update JUnit tests for service-layer logic (invoice calculation, stock checks, status transitions).
-8. Before finishing: build with `mvn clean compile` and run `mvn test`. Report anything you could not verify.
+8. Before finishing: build with `mvn clean compile`, run `mvn test`, and run
+   `npm run build` in `frontend/`. Report anything you could not verify.
 9. Explain what you changed in plain language so the developer can understand and present it.
 10. Never commit secrets, local config, build output, or IDE files.
 11. After any major change, refresh the project documentation in the same change:
-    - `README.md` → "Current status" table, the window/screens description, and the layout tree.
+    - `README.md` → "Current status" table, the screen/route table, and the layout tree.
     - `AGENTS.md` → section 1.1 state table.
     - `util.AppInfo.VERSION` / `BUILD_STAGE`.
     The README is what teammates and teachers read first, so it must never describe an older version than the code.
-12. The application must stay launchable without a database: no startup query in `Main`. MySQL is reached only when a screen calls a service.
+12. The application must stay launchable without a database: no startup query in
+    `Main`. MySQL is reached only when a request calls a service.
 
 ## 10. Build and Run
 
 ```bash
-mvn clean compile        # compile
-mvn test                 # run tests
-mvn exec:java            # run the app (main class: com.vsc.Main)
+mvn clean compile        # compile the backend
+mvn test                 # run the JUnit 5 tests
+mvn exec:java            # start the API and serve frontend/dist on :8080
+
+cd frontend
+npm install              # once
+npm run dev              # Vite dev server on :5173, proxies /api to :8080
+npm run build            # production build into frontend/dist
 ```
 
-Current machine note: **Maven is not on `PATH`** yet, so `mvn` commands do not
-run here. Use VS Code's **Run** button on `src/main/java/com/vsc/Main.java`
-(the Java extension compiles to `bin/` or `target/` for you). Once Maven is
-installed, the three commands above work as written. `mvn exec:java` needs the
-`exec-maven-plugin`, which is not in `pom.xml` yet — ask before adding it.
+Current machine note: **Maven is not on `PATH`**, so use the portable Maven or
+your IDE. `mvn exec:java` uses the `exec-maven-plugin` already declared in
+`pom.xml`. `frontend/dist` is git-ignored: run `npm run build` before relying on
+the single-port mode.
 
-`mvn test` runs 31 tests. `dao.WorkflowIntegrationTest` needs MySQL;
+`mvn test` runs 30 tests. `dao.WorkflowIntegrationTest` needs MySQL;
 without a reachable server it is **skipped** (JUnit assumption), not failed, so
 the suite still passes on a teammate's machine.
 
@@ -228,9 +264,10 @@ freely with `mvn clean`.
 
 Local setup:
 
-1. Install JDK 21, Maven, and MySQL.
+1. Install JDK 21, Maven, MySQL, and Node 20+.
 2. Create the database and tables: run `database/schema.sql`, then optionally `database/sample_data.sql`.
 3. Copy `src/main/resources/application.properties.example` to `application.properties` and fill in your MySQL URL, username, and password.
+4. Run `npm install` in `frontend/`.
 
 ## 11. Git Rules
 
@@ -242,7 +279,9 @@ Local setup:
 
 ## 12. Out of Scope for Version 1
 
-Online payments, GPS tracking, complex accounting, multi-branch support. Optional later: login roles (Admin/Receptionist), dashboard, search/filter, reports, appointment scheduling, service reminders, audit log, PDF invoice export.
+Online payments, GPS tracking, complex accounting, multi-branch support.
+Optional later: login roles (Admin/Receptionist), reports, appointment
+scheduling, service reminders, audit log, PDF invoice export.
 
 ## 13. Definition of Done for the First Version
 

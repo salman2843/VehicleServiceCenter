@@ -1,16 +1,20 @@
 package com.vsc;
 
-import com.vsc.ui.MainFrame;
+import com.vsc.api.ApiServer;
+import com.vsc.util.AppInfo;
 
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import java.awt.Desktop;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 /**
  * Entry point of the Vehicle Service Center application.
  *
- * <p>All Swing work happens on the Event Dispatch Thread (EDT), which is why the
- * window is created inside {@link SwingUtilities#invokeLater(Runnable)}. This is
- * the class to run from the IDE to check that the application starts.</p>
+ * <p>Starts the HTTP API that the React frontend talks to and, when the frontend
+ * has been built, serves it from the same port. Pass {@code --no-open} to stop
+ * the browser from opening automatically. The port can be changed with
+ * {@code -Dvsc.port=9090}.</p>
  */
 public final class Main {
 
@@ -19,19 +23,38 @@ public final class Main {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            applySystemLookAndFeel();
-            new MainFrame().setVisible(true);
-        });
+        int port = Integer.getInteger("vsc.port", ApiServer.DEFAULT_PORT);
+
+        ApiServer server;
+        try {
+            server = new ApiServer(port);
+        } catch (IOException e) {
+            System.err.println("Could not start the server on port " + port + ": " + e.getMessage());
+            System.err.println("Another process may already use that port. Try -Dvsc.port=9090.");
+            return;
+        }
+
+        server.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(server::close, "vsc-shutdown"));
+
+        System.out.println(AppInfo.NAME + " " + AppInfo.VERSION);
+        System.out.println("API and UI: " + server.url());
+        System.out.println("Frontend dev server: cd frontend && npm run dev");
+
+        if (!List.of(args).contains("--no-open")) {
+            openBrowser(server.url());
+        }
     }
 
-    /** Uses the operating system's native look so the app does not look like a 1998 demo. */
-    private static void applySystemLookAndFeel() {
+    /** Best effort: a headless or locked-down machine simply does not open a tab. */
+    private static void openBrowser(String url) {
+        if (!Desktop.isDesktopSupported()) {
+            return;
+        }
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            // Not fatal: the app simply keeps the default Swing look and feel.
-            System.err.println("Could not apply system look and feel, using default.");
+            Desktop.getDesktop().browse(URI.create(url));
+        } catch (IOException | RuntimeException ignored) {
+            // the URL is printed above, so the user can still open it manually
         }
     }
 }

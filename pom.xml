@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>Vehicle Service Center Management System</name>
-    <description>Java Swing desktop application for a small vehicle workshop.</description>
+    <description>Vehicle workshop management system: React + Tailwind frontend, Java HTTP API and MySQL storage.</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -50,6 +50,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
+            </plugin>
+            <!-- mvn exec:java starts the API server (and serves the built UI) -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <mainClass>com.vsc.Main</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

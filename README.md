@@ -1,150 +1,170 @@
 # Vehicle Service Center Management System
 
-A Java Swing desktop application for a small vehicle workshop: customers,
-vehicles, job cards, mechanics, spare-part inventory, invoices and payments.
-Built with Java 21, Swing, Maven, JUnit 5 and MySQL via JDBC.
+A workshop desk for a small vehicle service centre: customers, vehicles, job
+cards, mechanics, spare-part inventory, invoices and payments.
+
+- **Frontend:** React 19 + TypeScript + Tailwind CSS 4 (Vite), in `frontend/`.
+- **Backend:** Java 21 HTTP API on the JDK's built-in `com.sun.net.httpserver`,
+  in `com.vsc.api`. No new runtime dependencies.
+- **Storage:** MySQL 8 through JDBC, behind the existing DAO and service layers.
+
+The React UI never touches MySQL. It calls the JSON API, the API calls the
+service layer, and the services call the DAOs. This keeps the business rules
+(status transitions, stock, invoice calculation, payments) in one place.
 
 This is an MCA Java / OOP project; the code is kept readable so every team
 member can explain it.
 
 ## Current status
 
-**Version 0.3.0 — backend ready (database + DAO + service layers).**
+**Version 1.0.0 — complete application.** React UI, Java HTTP API, MySQL
+storage, 30 passing tests.
 
 | Area | State |
 | --- | --- |
-| Swing window + navigation | **Done** — header, 7 screens in a side menu, status bar, File/View/Help menus |
-| Feature screens | **Placeholder** — each lists what it will do and which service it will call |
+| React UI | **Done** — 9 screens: overview, customers, vehicles, job cards + detail, invoices + detail, inventory, mechanics |
+| Design system | **Done** — `frontend/src/index.css` tokens, shared primitives in `components/ui.tsx`; context in `PRODUCT.md` and `DESIGN.md` |
+| HTTP API | **Done** — 30 endpoints in `com.vsc.api`, CORS, JSON errors, static hosting of `frontend/dist` |
 | Model classes | **Done** — 12 entity classes + 3 enums |
 | Shared helpers | **Done** — `InputValidator`, `Money`, `AppInfo`, `DBConnection` |
 | Database | **Done and executed** — `database/schema.sql` created all 10 tables on MySQL 8.4.13 |
 | DAO layer | **Done** — 10 DAO classes, `PreparedStatement` only |
 | Service layer | **Done** — customers, vehicles, mechanics, catalogue, inventory, job cards, billing |
-| Tests | **31 passing** (`mvn test`), including an end-to-end run against MySQL |
-| Screens wired to the database | **Not yet** — this is the next step |
-
-The next step is the UI: replace the placeholder screens one at a time, starting
-with Customers (search, register, open vehicles), then Job cards and Invoices.
+| Tests | **30 passing** (`mvn test`), including an end-to-end run against MySQL |
 
 ## Requirements
 
 | Tool  | Version | Needed for |
 | ----- | ------- | ---------- |
-| JDK   | 21      | Everything |
-| Maven | 3.8+    | `mvn` commands (not installed yet — use the VS Code **Run** button meanwhile) |
-| MySQL | **8.4 LTS** (8.0+ works) | Saving data. Installed and running as service `MySQL84` on the development machine |
+| JDK   | 21      | Backend and tests |
+| Maven | 3.8+    | `mvn` commands |
+| MySQL | **8.4 LTS** (8.0+ works) | Saving data |
+| Node  | 20+ and npm | Building or developing the React UI |
 
-## Run it in VS Code
+## One-time setup
 
-1. Install JDK 21 and VS Code. Confirm with `java -version` in a terminal.
-2. Install the **Extension Pack for Java** (Microsoft) in VS Code.
-3. `File -> Open Folder` and choose this project folder (the one with `pom.xml`).
-4. Wait until the "Java: importing…" progress in the bottom-right disappears.
-5. Open `src/main/java/com/vsc/Main.java` and click **Run** above `main`, or
-   press `F5` to debug.
-6. The *Vehicle Service Center 0.3.0* window opens on the Dashboard. Click the
-   screens in the left menu (Customers, Vehicles, Job cards, Inventory,
-   Invoices, Mechanics) to move around.
+1. Create the database and tables (see [`database/README.md`](database/README.md)):
 
-If **Run** does not appear: `Ctrl+Shift+P` -> `Java: Clean Java Language Server
-Workspace`, then reopen the file.
+   ```bash
+   mysql -u root -p < database/schema.sql
+   ```
 
-## What is in the window today
+   Optionally load the demo rows:
 
-```
-+------------------------------------------------------+
-| Vehicle Service Center 0.3.0        File View Help   |
-+--------------+---------------------------------------+
-| Dashboard    |                                       |
-| Customers    |   <selected screen>                   |
-| Vehicles     |                                       |
-| Job cards    |   e.g. "Job cards" with the list of   |
-| Inventory    |        features planned for it        |
-| Invoices     |                                       |
-| Mechanics    |                                       |
-+--------------+---------------------------------------+
-| Application running - backend ready, screens not ... |
-+------------------------------------------------------+
-```
+   ```bash
+   mysql -u root -p < database/sample_data.sql
+   ```
 
-Each screen under `src/main/java/com/vsc/ui/` is its own class, so a team
-member can own one screen without touching the others. They currently extend
-`PlaceholderPanel`; when a screen is wired to the service layer, that content is
-replaced by the real table or form.
-
-## Run it from a terminal
-
-```bash
-mvn clean compile        # compile everything
-mvn test                 # run the JUnit 5 tests
-```
-
-`mvn exec:java` is not configured yet; it will be added together with the
-database connection step.
-
-
-## Understanding the build output (`target/` folder)
-
-After you build or run the project (Maven, or the VS Code **Run** button), a
-`target/` folder appears in the project root. **It is generated, not source code**
-— you can delete it at any time and rebuild.
-
-```
-target/
-+-- classes/                 your src/main/java compiled to .class files
-|      com/vsc/Main.class
-|      com/vsc/model/Customer.class   (one per .java file)
-|      application.properties.example (copied from resources)
-+-- test-classes/            src/test/java compiled (e.g. AppSmokeTest.class)
-+-- surefire-reports/        test results ("Tests run: 31, Failures: 0")
-+-- maven-status/            Maven's bookkeeping of what was compiled
-+-- generated-sources/       empty for us; plugins would generate code here
-```
-
-Things every member should know:
-
-- `.class` files are **bytecode**, not readable text. Never edit anything inside
-  `target/`; edit `src/` instead.
-- `target/` is listed in `.gitignore`, so it is **never pushed to GitHub**. Each
-  member builds their own.
-- `mvn clean` deletes the whole folder. `mvn clean test` = delete, rebuild,
-  re-run tests.
-- If the app behaves strangely after a change, delete `target/` (or run
-  `mvn clean compile`) and run again — an old `.class` file can otherwise linger.
-- Using VS Code's **Run** button instead of Maven may create a `bin/` folder
-  with the same compiled output. Both `bin/` and `target/` are ignored by Git.
-
-What to share with the team: only `src/`, `pom.xml`, `database/*.sql`, `docs/`
-and the Markdown files. Everything else is either local config or build output.
-
-## Backend: database, DAO and service layers
-
-### One-time setup on your machine
-
-1. Run the schema once (see [`database/README.md`](database/README.md)):
-   `mysql -u root -p < database/schema.sql`
-   Optionally load the demo rows: `mysql -u root -p < database/sample_data.sql`
 2. Copy `src/main/resources/application.properties.example` to
    `application.properties` and put your own MySQL password in it. This file is
    git-ignored, so nobody's password reaches GitHub.
-3. Run `mvn test`. The integration test drives the whole workflow against your
-   database and deletes its own rows afterwards. **If MySQL is not running it is
-   skipped, not failed**, so the app and the test suite still work without a
-   database.
 
-### Who does what
+3. Install the frontend dependencies:
 
-| Layer | Classes | Responsibility |
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+## Run the whole application
+
+Build the UI once, then start the Java server. It serves both the API and the
+built React app from one port:
+
+```bash
+cd frontend
+npm run build
+cd ..
+
+mvn clean compile
+mvn exec:java
+```
+
+Open **http://localhost:8080**. The browser opens automatically unless you pass
+`--no-open`. Use another port with `-Dvsc.port=9090`.
+
+`mvn exec:java` needs the `exec-maven-plugin`, which is already configured in
+`pom.xml`. If `frontend/dist` has not been built yet, the server still starts and
+shows a short page explaining how to build the UI.
+
+### Develop the UI with hot reload
+
+Run the API and Vite in two terminals:
+
+```bash
+# terminal 1 - Java API on :8080
+mvn exec:java
+
+# terminal 2 - React dev server on :5173
+cd frontend
+npm run dev
+```
+
+Vite proxies `/api` to `http://localhost:8080`, so the UI works against the real
+database. Open the address Vite prints (usually **http://localhost:5173**).
+
+### Run the tests
+
+```bash
+mvn test
+```
+
+`dao.WorkflowIntegrationTest` needs MySQL; without a reachable server it is
+**skipped** (JUnit assumption), not failed, so the suite still passes on a
+teammate's machine.
+
+## What the screens do
+
+| Screen | Route | What it does |
 | --- | --- | --- |
-| `dao` | `CustomerDao`, `VehicleDao`, `MechanicDao`, `ServiceItemDao`, `SparePartDao`, `JobCardDao`, `JobServiceDao`, `JobPartDao`, `InvoiceDao`, `PaymentDao` | SQL only: `PreparedStatement`, `ResultSet` to object mapping |
-| `service` | `CustomerService`, `VehicleService`, `MechanicService`, `ServiceCatalogService`, `InventoryService`, `JobCardService`, `BillingService` | Validation, transactions and business rules |
-| `util` | `DBConnection` | Reads `application.properties`, opens a `Connection`, hides the password in error messages |
-| `ui` | the panels | Next step: call a service and show the result / an error dialog |
+| Overview | `/` | Counts, job pipeline by status, recent jobs, money collected vs invoiced, low stock and unpaid bills |
+| Customers | `/customers` | Search by name/phone, register, edit, open a customer drawer with their vehicles |
+| Vehicles | `/vehicles` | Search, filter cars/motorcycles, add a vehicle, open service history |
+| Job cards | `/jobs` | Filter by stage, search, open a job card |
+| Job detail | `/jobs/:id` | Complaint, services, parts (stock deducted), mechanic, one-step status advance, invoice generation |
+| Invoices | `/invoices` | Filter by payment state, search, totals and outstanding amounts |
+| Invoice detail | `/invoices/:id` | Bill lines from the saved job prices, discount, payments, record a payment |
+| Inventory | `/inventory` | Spare parts (stock, low-stock warning, receive stock, edit) and the service catalogue |
+| Mechanics | `/mechanics` | Add and edit mechanics; only active mechanics can be assigned |
 
-DAOs never create connections; the service passes one in, which is what makes a
-transaction possible.
+## How the layers connect
 
-### Rules that are actually enforced by code
+```
+React page (frontend/src/pages)
+   -> api client (frontend/src/api.ts)  -- HTTP/JSON -->
+      ApiServer / Router (com.vsc.api)
+         -> service class (com.vsc.service)
+            -> DAO (com.vsc.dao)
+               -> MySQL
+```
+
+- The UI never contains SQL or money/stock calculations; it formats values for
+  display with `Intl.NumberFormat` (`en-IN`, INR).
+- Services own validation, transactions and business rules.
+- DAOs take the `Connection` from the service so multi-step rules stay in one
+  transaction.
+- Amounts cross the wire as JSON numbers produced from `BigDecimal`; the Java
+  side never uses `float`/`double` for money.
+
+### API endpoints
+
+| Area | Endpoints |
+| --- | --- |
+| Health | `GET /api/health` |
+| Dashboard | `GET /api/dashboard` |
+| Customers | `GET/POST /api/customers`, `GET/PUT /api/customers/{id}` |
+| Vehicles | `GET/POST /api/vehicles`, `GET /api/vehicles/{id}`, `GET /api/vehicles/{id}/jobs` |
+| Mechanics | `GET/POST /api/mechanics`, `PUT /api/mechanics/{id}` |
+| Catalogue | `GET/POST /api/services` |
+| Inventory | `GET/POST /api/parts`, `PUT /api/parts/{id}`, `POST /api/parts/{id}/receive` |
+| Jobs | `GET/POST /api/jobs`, `GET /api/jobs/{id}`, `POST /api/jobs/{id}/mechanic`, `POST /api/jobs/{id}/status`, `POST /api/jobs/{id}/services`, `POST /api/jobs/{id}/parts` |
+| Invoices | `GET/POST /api/invoices`, `GET /api/invoices/{id}`, `POST /api/invoices/{id}/payments` |
+
+List endpoints accept `?q=` where it makes sense (`customers`, `vehicles`,
+`jobs`, `invoices`); jobs also accept `?status=`, invoices `?status=`, vehicles
+`?customerId=`, mechanics `?active=true`.
+
+### Rules enforced by the backend
 
 - **Status** moves one step only: `RECEIVED → IN_PROGRESS → COMPLETED → DELIVERED`
   (`JobStatus.canMoveTo`, `JobCardService.updateStatus`).
@@ -154,23 +174,12 @@ transaction possible.
 - **Adding a part** writes the stock deduction and the job line in one
   transaction (`JobCardService.addPart`): both succeed or neither does.
 - **Invoice** = labour + parts − discount (+ tax), from the prices saved on the
-  job lines (`BillingService.calculate`, unit tested).
+  job lines (`BillingService.calculate`, unit tested). The UI uses a discount and
+  no tax by default.
 - **Payment status** is derived, never typed in: `UNPAID`, `PARTIALLY_PAID`,
   `PAID` (`BillingService.deriveStatus`).
 - An invoice needs a `COMPLETED` job, one invoice per job, and a `DELIVERED` job
   cannot be edited any more.
-
-### How a screen will call it
-
-```java
-Customer saved = new CustomerService().register(new Customer(name, phone));
-JobCard job    = new JobCardService().openJob(vehicleId, complaint);
-Invoice bill   = new BillingService().generateInvoice(job.getId(), discount);
-```
-
-The panel wraps those calls in `try/catch` for `ValidationException`,
-`InsufficientStockException`, `InvalidStatusTransitionException` and
-`SQLException`, and shows a friendly `JOptionPane`. No SQL in the UI.
 
 ## Database design
 
@@ -194,46 +203,50 @@ customers ──< vehicles ──< job_cards ──< job_services >── servic
                               └──  mechanics (assigned mechanic)
 ```
 
-Create the database on a new machine with:
-
-```bash
-mysql -u root -p < database/schema.sql
-```
-
 ## Project layout
 
 ```
-database/                 schema.sql (executed) + sample_data.sql (demo rows loaded)
-docs/                     database_design.md, er_diagram.md, project_proposal.md, screenshots/
+frontend/                 React + TypeScript + Tailwind UI
+    src/pages/            one file per screen (9 screens)
+    src/components/       Layout, ui primitives, modals, toasts, icons
+    src/api.ts            typed HTTP client
+    src/types.ts          JSON shapes returned by the API
+    src/hooks.ts          useApi / useDebounced helpers
+    src/index.css         Tailwind theme tokens
+    dist/                 production build, served by the Java server (git-ignored)
+database/                 schema.sql (executed) + sample_data.sql (demo rows)
+docs/                     database_design.md, er_diagram.md, project_proposal.md
 src/main/java/com/vsc/
-    Main.java             entry point (launches the Swing window)
-    model/                entities: Customer, Vehicle/Car/Motorcycle, JobCard, JobServiceLine, ...
+    Main.java             entry point (starts the HTTP API and opens the browser)
+    api/                  HTTP server, router, JSON, one handler per resource
+    model/                entities: Customer, Vehicle/Car/Motorcycle, JobCard, ...
     dao/                  10 DAO classes: SQL and row mapping only
     service/              7 service classes: validation, transactions, business rules
-    ui/                   MainFrame, one panel per screen, UiTheme, PlaceholderPanel
     util/                 DBConnection, AppInfo, InputValidator, Money
     exception/            custom checked exceptions
 src/main/resources/
     application.properties.example    template to copy (the real one is git-ignored)
 src/test/java/com/vsc/    JUnit 5: model rules, billing, stock, validation, DB integration
-target/                   build output, generated, git-ignored (see section above)
+target/                   Maven build output, generated, git-ignored
 ```
 
-Layer rule: `ui -> service -> dao -> MySQL`. The UI never contains SQL, and
-business rules never live in a button listener.
+Layer rule: `React -> HTTP API -> service -> dao -> MySQL`. The UI never contains
+SQL, and business rules never live in a button handler.
 
 ## Contributing
 
 - Work on a feature branch: `feature/<short-name>` or `fix/<short-name>`.
 - Money is always `BigDecimal`, never `double`.
-- Run `mvn test` before opening a pull request (31 tests; the MySQL one skips
-  itself when no database is running).
+- Run `mvn test` and `cd frontend && npm run build` before opening a pull request
+  (30 tests; the MySQL one skips itself when no database is running).
 - Never commit `application.properties` (copy
-  `src/main/resources/application.properties.example`).
+  `src/main/resources/application.properties.example`) or `frontend/dist`.
 - **Update this README after every major change**: tick the `Current status`
-  table, add the new screen to the layout, and bump `AppInfo.VERSION`. A member
-  who opens the repository should always see what works today without asking.
-- One screen = one class in `com.vsc.ui`. Do not put two screens in one file.
+  table, add the new screen to the route table, and bump `AppInfo.VERSION`. A
+  member who opens the repository should always see what works today without
+  asking.
+- One screen = one file in `frontend/src/pages`. Do not put two screens in one
+  file.
 - Add a JUnit test with every new rule (calculation, stock, status, validation).
 - AI agents must read `AGENTS.md` first; it describes the current state of the
   code and the rules to follow.
